@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "My Side Panel Extension",
+    "version": "1.0",
+    "description": "A Chrome Extension Side Panel with React & Vite",
+    "permissions": ["sidePanel"],
+    "host_permissions": ["https://*/*"],
+    "background": {
+      "service_worker": "background.js",
+      "type": "module"
+    },
+    "side_panel": {
+      "default_path": "index.html"
+    }
+  }
+  
