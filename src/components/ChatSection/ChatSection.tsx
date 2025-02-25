@@ -6,24 +6,50 @@ import { LuSendHorizontal } from "react-icons/lu";
 const ChatSection = () => {
     const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([]);
     const [message, setMessage] = useState("");
-    const sendMessage = async () => {
-        if (!message.trim()) return;
-        // Capture screenshot
-        chrome.runtime.sendMessage({ type: "CAPTURE_SCREENSHOT" }, async (response) => {
-            const screenshot = response?.screenshot;
-            setMessages([...messages, { role: "user", text: message }]);
-            const res = await fetch("http://localhost:3000/api/sendMessage", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: message, screenshot }),
+    const sendMessage = async (): Promise<void> => {
+        if (!message.trim()) {
+            console.error("Message is empty");
+            return;
+        }
+    
+        try {
+            // Capture screenshot
+            chrome.runtime.sendMessage({ type: "CAPTURE_SCREENSHOT" }, async (response: { screenshot?: string } | undefined) => {
+                const screenshot: string | null = response?.screenshot || null; // Ensure screenshot is handled properly
+    
+                setMessages((prev) => [...prev, { role: "user", text: message }]);
+    
+                try {
+                    const res: Response = await fetch("http://localhost:5678/webhook/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message, screenshot }),
+                    });
+    
+                    if (!res.ok) {
+                        if (res.status === 404) {
+                            console.error("Webhook not found. Make sure the workflow is active in n8n.");
+                        }
+                        throw new Error(`Server responded with status ${res.status}`);
+                    }
+    
+                    const textData: string = await res.text();
+                    setMessages((prev) => [...prev, { role: "bot", text: textData }]);
+                } catch (error: unknown) {
+                    const errMessage = error instanceof Error ? error.message : "Unknown error";
+                    console.error("Error sending message:", errMessage);
+                    setMessages((prev) => [...prev, { role: "bot", text: "Error: Unable to get response from server." }]);
+                }
             });
-
-            const data = await res.json();
-            setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
-        });
-
+        } catch (error: unknown) {
+            const errMessage = error instanceof Error ? error.message : "Unknown error";
+            console.error("Error capturing screenshot:", errMessage);
+        }
+    
         setMessage("");
     };
+    
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -43,7 +69,7 @@ const ChatSection = () => {
                                 padding: "10px",
                                 borderRadius: "10px",
                                 maxWidth: "70%",
-                                marginBottom:"5px"
+                                marginBottom: "5px"
                             }}>
                                 {msg.text}
                             </div>
