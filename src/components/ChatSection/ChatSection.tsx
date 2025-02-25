@@ -1,54 +1,65 @@
-import { useState } from "react";
-import logo from '../../assets/github-copilot-icon.png'
+import { useState, useEffect, useRef } from "react";
+import logo from '../../assets/github-copilot-icon.png';
 import { IoImageOutline } from "react-icons/io5";
 import { MdOutlineKeyboardVoice } from "react-icons/md";
 import { LuSendHorizontal } from "react-icons/lu";
+
+type Message = { role: "user" | "bot"; text: string };
+
 const ChatSection = () => {
-    const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([]);
-    const [message, setMessage] = useState("");
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [message, setMessage] = useState<string>("");
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
     const sendMessage = async (): Promise<void> => {
         if (!message.trim()) {
             console.error("Message is empty");
             return;
         }
-    
+
+        const history = messages.map(msg => ({ role: msg.role, text: msg.text }));
+
         try {
-            // Capture screenshot
             chrome.runtime.sendMessage({ type: "CAPTURE_SCREENSHOT" }, async (response: { screenshot?: string } | undefined) => {
-                const screenshot: string | null = response?.screenshot || null; // Ensure screenshot is handled properly
-    
+                if (!response?.screenshot) {
+                    setMessages(prev => [...prev, { role: "bot", text: "Error: This page is not allowing screenshots." }]);
+                    return;
+                }
+                const screenshot: string = response?.screenshot;
+
                 setMessages((prev) => [...prev, { role: "user", text: message }]);
-    
+
                 try {
                     const res: Response = await fetch("http://localhost:5678/webhook/chat", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ message, screenshot }),
+                        body: JSON.stringify({ message, screenshot, history }),
                     });
-    
+
                     if (!res.ok) {
                         if (res.status === 404) {
                             console.error("Webhook not found. Make sure the workflow is active in n8n.");
                         }
                         throw new Error(`Server responded with status ${res.status}`);
                     }
-    
+
                     const textData: string = await res.text();
-                    setMessages((prev) => [...prev, { role: "bot", text: textData }]);
+                    setMessages(prev => [...prev, { role: "bot", text: textData }]);
                 } catch (error: unknown) {
-                    const errMessage = error instanceof Error ? error.message : "Unknown error";
-                    console.error("Error sending message:", errMessage);
-                    setMessages((prev) => [...prev, { role: "bot", text: "Error: Unable to get response from server." }]);
+                    console.error("Error sending message:", error);
+                    setMessages(prev => [...prev, { role: "bot", text: "Error: Unable to get response from server." }]);
                 }
             });
         } catch (error: unknown) {
-            const errMessage = error instanceof Error ? error.message : "Unknown error";
-            console.error("Error capturing screenshot:", errMessage);
+            console.error("Error capturing screenshot:", error);
         }
-    
+
         setMessage("");
     };
-    
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -56,24 +67,23 @@ const ChatSection = () => {
             sendMessage();
         }
     };
+
     return (
         <>
             <div style={{ height: "100%", display: "flex", flexDirection: "column", overflowY: "auto" }}>
-                {messages.length > 0 && messages.some(msg => msg.text.trim() !== "") ? (
+                {messages.length > 0 ? (
                     messages.map((msg, index) => (
-                        msg.text.trim() !== "" && (
-                            <div key={index} style={{
-                                alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                                backgroundColor: msg.role === "user" ? "#007bff" : "#f1f1f1",
-                                color: msg.role === "user" ? "white" : "black",
-                                padding: "10px",
-                                borderRadius: "10px",
-                                maxWidth: "70%",
-                                marginBottom: "5px"
-                            }}>
-                                {msg.text}
-                            </div>
-                        )
+                        <div key={index} style={{
+                            alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                            backgroundColor: msg.role === "user" ? "#007bff" : "#f1f1f1",
+                            color: msg.role === "user" ? "white" : "black",
+                            padding: "10px",
+                            borderRadius: "10px",
+                            maxWidth: "70%",
+                            marginBottom: "5px"
+                        }}>
+                            {msg.text}
+                        </div>
                     ))
                 ) : (
                     <div style={{ textAlign: "center", marginTop: "20px" }}>
@@ -81,8 +91,9 @@ const ChatSection = () => {
                         <p>n8n Copilot your Ai companion</p>
                     </div>
                 )}
+                <div ref={messagesEndRef} />
             </div>
-            {/* message Field */}
+            {/* Message Field */}
             <div style={{
                 display: "flex",
                 flexDirection: "column",
@@ -111,34 +122,20 @@ const ChatSection = () => {
                     marginTop: "10px"
                 }}>
                     <div>
-                        <button style={{
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            marginRight: "2px"
-                        }}>
+                        <button style={{ background: "none", border: "none", cursor: "pointer", marginRight: "2px" }}>
                             <IoImageOutline style={{ width: "24px", height: "24px" }} />
                         </button>
-                        <button style={{
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer"
-                        }}>
+                        <button style={{ background: "none", border: "none", cursor: "pointer" }}>
                             <MdOutlineKeyboardVoice style={{ width: "24px", height: "24px" }} />
                         </button>
                     </div>
-                    <button onClick={sendMessage} style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer"
-                    }}>
+                    <button onClick={sendMessage} style={{ background: "none", border: "none", cursor: "pointer" }}>
                         <LuSendHorizontal style={{ width: "24px", height: "24px" }} />
                     </button>
                 </div>
             </div>
-
         </>
-    )
-}
+    );
+};
 
-export default ChatSection
+export default ChatSection;
