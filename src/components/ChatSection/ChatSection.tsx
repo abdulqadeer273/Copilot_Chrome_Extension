@@ -1,5 +1,8 @@
 import { useState } from "react";
 import logo from '../../assets/github-copilot-icon.png'
+import { IoImageOutline } from "react-icons/io5";
+import { MdOutlineKeyboardVoice } from "react-icons/md";
+import { LuSendHorizontal } from "react-icons/lu";
 const ChatSection = () => {
     const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([]);
     const [message, setMessage] = useState("");
@@ -21,6 +24,12 @@ const ChatSection = () => {
 
         setMessage("");
     };
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    };
     return (
         <>
             <div style={{ height: "100%", display: "flex", flexDirection: "column", overflowY: "auto" }}>
@@ -34,6 +43,7 @@ const ChatSection = () => {
                                 padding: "10px",
                                 borderRadius: "10px",
                                 maxWidth: "70%",
+                                marginBottom:"5px"
                             }}>
                                 {msg.text}
                             </div>
@@ -49,27 +59,58 @@ const ChatSection = () => {
             {/* message Field */}
             <div style={{
                 display: "flex",
+                flexDirection: "column",
                 padding: "10px",
-                borderTop: "1px solid #ddd",
+                border: "2px solid black",
                 backgroundColor: "#b7f0f2"
             }}>
-                <input
-                    type="text"
+                <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Ask something..."
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask anything"
                     style={{
-                        flex: 1,
-                        padding: "8px",
-                        border: "1px solid #ddd",
-                        borderRadius: "5px",
-                        backgroundColor: "#b7f0f2"
+                        width: "100%",
+                        backgroundColor: "#b7f0f2",
+                        resize: "none",
+                        height: "40px",
+                        overflowY: "auto",
+                        outline: "none",
+                        border: "none"
                     }}
                 />
-                <button onClick={sendMessage} style={{ marginLeft: "10px", padding: "8px 12px", backgroundColor: "#003671", color: "white", borderRadius: "5px", border: "none", cursor: "pointer" }}>
-                    Send
-                </button>
+                <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginTop: "10px"
+                }}>
+                    <div>
+                        <button style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            marginRight: "2px"
+                        }}>
+                            <IoImageOutline style={{ width: "24px", height: "24px" }} />
+                        </button>
+                        <button style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer"
+                        }}>
+                            <MdOutlineKeyboardVoice style={{ width: "24px", height: "24px" }} />
+                        </button>
+                    </div>
+                    <button onClick={sendMessage} style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer"
+                    }}>
+                        <LuSendHorizontal style={{ width: "24px", height: "24px" }} />
+                    </button>
+                </div>
             </div>
+
         </>
     )
 }
