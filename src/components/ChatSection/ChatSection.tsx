@@ -3,6 +3,7 @@ import logo from '../../assets/github-copilot-icon.png';
 import { IoImageOutline } from "react-icons/io5";
 import { MdOutlineKeyboardVoice } from "react-icons/md";
 import { LuSendHorizontal } from "react-icons/lu";
+import ReactMarkdown from 'react-markdown';
 
 type Message = { role: "user" | "bot"; text: string };
 
@@ -75,14 +76,14 @@ const ChatSection = () => {
                     messages.map((msg, index) => (
                         <div key={index} style={{
                             alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                            backgroundColor: msg.role === "user" ? "#007bff" : "#f1f1f1",
+                            backgroundColor: msg.role === "user" ? "#167477" : "#f1f1f1",
                             color: msg.role === "user" ? "white" : "black",
                             padding: "10px",
                             borderRadius: "10px",
                             maxWidth: "70%",
                             marginBottom: "5px"
                         }}>
-                            {msg.text}
+                            <ReactMarkdown>{msg.text}</ReactMarkdown>
                         </div>
                     ))
                 ) : (
