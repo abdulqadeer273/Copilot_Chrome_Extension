@@ -1,11 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, JSX } from "react";
 import logo from '../../assets/github-copilot-icon.png';
 import { IoImageOutline } from "react-icons/io5";
 import { MdOutlineKeyboardVoice } from "react-icons/md";
 import { LuSendHorizontal } from "react-icons/lu";
 import ReactMarkdown from 'react-markdown';
+import { BeatLoader } from "react-spinners";
 
-type Message = { role: "user" | "bot"; text: string };
+type Message = {
+    role: "user" | "bot";
+    text: string | JSX.Element;
+    id?: number; // Optional ID for tracking messages 
+};
 
 const ChatSection = () => {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -25,40 +30,63 @@ const ChatSection = () => {
         const history = messages.map(msg => ({ role: msg.role, text: msg.text }));
 
         try {
-            chrome.runtime.sendMessage({ type: "CAPTURE_SCREENSHOT" }, async (response: { screenshot?: string } | undefined) => {
-                if (!response?.screenshot) {
-                    setMessages(prev => [...prev, { role: "bot", text: "Error: This page is not allowing screenshots." }]);
-                    return;
-                }
-                const screenshot: string = response?.screenshot;
-
-                setMessages((prev) => [...prev, { role: "user", text: message }]);
-
-                try {
-                    const res: Response = await fetch("http://localhost:5678/webhook/chat", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ message, screenshot, history }),
-                    });
-
-                    if (!res.ok) {
-                        if (res.status === 404) {
-                            console.error("Webhook not found. Make sure the workflow is active in n8n.");
-                        }
-                        throw new Error(`Server responded with status ${res.status}`);
+            chrome.runtime.sendMessage(
+                { type: "CAPTURE_SCREENSHOT" },
+                async (response: { screenshot?: string } | undefined) => {
+                    if (!response?.screenshot) {
+                        setMessages(prev => [...prev, { role: "bot", text: "Error: This page is not allowing screenshots." }]);
+                        return;
                     }
+                    const screenshot: string = response.screenshot;
 
-                    const textData: string = await res.text();
-                    setMessages(prev => [...prev, { role: "bot", text: textData }]);
-                } catch (error: unknown) {
-                    console.error("Error sending message:", error);
-                    setMessages(prev => [...prev, { role: "bot", text: "Error: Unable to get response from server." }]);
+                    // Add user message
+                    setMessages(prev => [...prev, { role: "user", text: message }]);
+
+                    // Add loader message
+                    const loaderId = Date.now();
+                    setMessages(prev => [...prev, {
+                        role: "bot",
+                        text: <div style={{ marginTop: "5px", marginBottom: "5px" }}>
+                            <BeatLoader
+                                color={"grey"}
+                                size={10}
+                                aria-label="Loading Spinner"
+                                data-testid="loader"
+                            />
+                        </div>,
+                        id: loaderId
+                    }]);
+
+                    try {
+                        const res: Response = await fetch("http://localhost:5678/webhook/chat", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ message, screenshot, history }),
+                        });
+
+                        if (!res.ok) {
+                            if (res.status === 404) {
+                                console.error("Webhook not found. Make sure the workflow is active in n8n.");
+                            }
+                            throw new Error(`Server responded with status ${res.status}`);
+                        }
+
+                        const textData: string = await res.text();
+
+                        // Remove loader before adding response
+                        setMessages(prev => prev.filter(msg => msg.id !== loaderId));
+                        setMessages(prev => [...prev, { role: "bot", text: textData }]);
+
+                    } catch (error: unknown) {
+                        // Remove loader before adding error message
+                        setMessages(prev => prev.filter(msg => msg.id !== loaderId));
+                        setMessages(prev => [...prev, { role: "bot", text: "Error: Unable to get response from server." }]);
+                    }
                 }
-            });
+            );
         } catch (error: unknown) {
             console.error("Error capturing screenshot:", error);
         }
-
         setMessage("");
     };
 
@@ -78,12 +106,13 @@ const ChatSection = () => {
                             alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
                             backgroundColor: msg.role === "user" ? "#167477" : "#f1f1f1",
                             color: msg.role === "user" ? "white" : "black",
-                            padding: "10px",
+                            paddingLeft: "10px",
+                            paddingRight: "10px",
                             borderRadius: "10px",
                             maxWidth: "70%",
                             marginBottom: "5px"
                         }}>
-                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                            {typeof msg.text === "string" ? <ReactMarkdown>{msg.text}</ReactMarkdown> : msg.text}
                         </div>
                     ))
                 ) : (
