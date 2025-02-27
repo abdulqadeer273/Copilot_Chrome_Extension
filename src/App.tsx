@@ -1,4 +1,4 @@
-import React, { useState } from "react";;
+import React, { useState, JSX, useEffect } from "react";;
 import { MdChatBubbleOutline, MdOutlineHistory, MdPersonOutline } from "react-icons/md";
 import { TfiHeadphoneAlt } from "react-icons/tfi";
 import { Component } from "./components/Base/Base";
@@ -24,12 +24,55 @@ const tabs = [
     icon: <MdPersonOutline fontSize={30} />,
   }
 ]
+type Message = {
+  role: "user" | "bot";
+  text: string | JSX.Element;
+};
+type ChatSession = {
+  id: string;
+  label: string;
+  messages: Message[];
+};
 interface ComponentProps {
-  activeTab: 'Tab1' | 'Tab2' | 'Tab3' | 'Tab4';
+  activeTab: "Tab1" | "Tab2" | "Tab3" | "Tab4";
+  activeChatId: string | null;
+  chats: ChatSession[];
+  setChats: React.Dispatch<React.SetStateAction<ChatSession[]>>;
+  setActiveChatId: React.Dispatch<React.SetStateAction<string | null>>;
   [key: string]: any;
 }
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ComponentProps["activeTab"]>("Tab1");
+  const [chats, setChats] = useState<ChatSession[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedChats = localStorage.getItem("chats");
+    const savedActiveChatId = localStorage.getItem("activeChatId");
+
+    if (savedChats) {
+      const parsedChats = JSON.parse(savedChats);
+      // Ensure no temporary chats are loaded
+      setChats(parsedChats.filter((chat: ChatSession) => chat.id !== "new-chat"));
+    }
+
+    if (savedActiveChatId) {
+      setActiveChatId(savedActiveChatId);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Filter out temporary chats (e.g., "new-chat") before saving to localStorage
+    const validChats = chats.filter(chat => chat.id !== "new-chat");
+    localStorage.setItem("chats", JSON.stringify(validChats));
+  }, [chats]);
+
+  // Save active chat ID to local storage whenever it changes
+  useEffect(() => {
+    if (activeChatId) {
+      localStorage.setItem("activeChatId", activeChatId);
+    }
+  }, [activeChatId]);
   return (
     <div style={{
       display: "flex",
@@ -41,17 +84,6 @@ const App: React.FC = () => {
       border: "2px solid",
       background: "turquoise"
     }}>
-      {/* Header */}
-      {/* <div style={{
-        backgroundColor: "#007bff",
-        color: "white",
-        padding: "10px",
-        textAlign: "center",
-        fontWeight: "bold",
-        borderTopLeftRadius: "14px", borderTopRightRadius: "14px"
-      }}>
-        n8n Copilot
-      </div> */}
       {/* Copilot Header */}
       <div style={{ display: "flex", borderTopLeftRadius: "14px", borderTopRightRadius: "14px" }}>
         {tabs.map(elem => (
@@ -76,7 +108,14 @@ const App: React.FC = () => {
       </div>
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "10px", display: "flex", flexDirection: "column", gap: "10px", }}>
-        <Component  {...{ activeTab, setActiveTab }} />
+        <Component
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          activeChatId={activeChatId}
+          setActiveChatId={setActiveChatId}
+          chats={chats}
+          setChats={setChats}
+        />
       </div>
 
     </div>

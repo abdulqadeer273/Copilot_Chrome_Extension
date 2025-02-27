@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, JSX } from "react";
 import logo from '../../assets/github-copilot-icon.png';
 import { IoImageOutline } from "react-icons/io5";
-import { MdOutlineKeyboardVoice } from "react-icons/md";
+import { MdOutlineKeyboardVoice, MdOutlineOpenInNew } from "react-icons/md";
 import { LuSendHorizontal } from "react-icons/lu";
 import ReactMarkdown from 'react-markdown';
 import { BeatLoader } from "react-spinners";
@@ -11,58 +11,158 @@ type Message = {
     text: string | JSX.Element;
     id?: number; // Optional ID for tracking messages 
 };
-
-const ChatSection = () => {
-    const [messages, setMessages] = useState<Message[]>([]);
+type ChatSession = {
+    id: string;
+    label: string;
+    messages: Message[];
+};
+interface ComponentProps {
+    activeTab: "Tab1" | "Tab2" | "Tab3" | "Tab4";
+    activeChatId: string | null;
+    chats: ChatSession[];
+    setChats: React.Dispatch<React.SetStateAction<ChatSession[]>>;
+    setActiveChatId: React.Dispatch<React.SetStateAction<string | null>>;
+    [key: string]: any;
+}
+const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, setActiveChatId }) => {
+    const activeChat = chats.find(chat => chat.id === activeChatId);
     const [message, setMessage] = useState<string>("");
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [chatSectionLoaded, setChatSectionLoaded] = useState(false);
+    const startNewChat = (): void => {
+        const newChat: ChatSession = {
+            id: "new-chat", // Temporary ID
+            label: "New Chat", // Temporary label
+            messages: [],
+        };
 
+        // Add the new chat to the chats state
+        setChats(prevChats => [...prevChats, newChat]);
+
+        // Set the new chat as active
+        setActiveChatId("new-chat");
+    };
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [activeChat?.messages]);
+    useEffect(() => {
+        if (!chatSectionLoaded && !activeChatId) {
+            startNewChat();
+            setChatSectionLoaded(true)
+        }
+    }, [])
+    const generateChatId = (): string => {
+        return `chat-${Date.now()}`; // Use timestamp for uniqueness
+    };
 
+    const generateChatName = (message: string): string => {
+        return message.substring(0, 20); // Use the first 20 characters of the message as the name
+    };
+    const activeChatIdRef = useRef<string | null>(activeChatId);
+
+    // Keep the ref in sync with the state
+    useEffect(() => {
+        activeChatIdRef.current = activeChatId;
+    }, [activeChatId]);
     const sendMessage = async (): Promise<void> => {
         if (!message.trim()) {
             console.error("Message is empty");
             return;
         }
 
-        const history = messages.map(msg => ({ role: msg.role, text: msg.text }));
+        // Ensure there's an active chat
+        if (!activeChatIdRef.current) {
+            console.error("No active chat selected");
+            return;
+        }
+
+        // Get the active chat
+        const activeChat = chats.find(chat => chat.id === activeChatIdRef.current);
+        if (!activeChat) {
+            console.error("Active chat not found");
+            return;
+        }
+
+        // Prepare history from the active chat's messages
+        const history = activeChat.messages.map(msg => ({ role: msg.role, text: msg.text }));
 
         try {
+            // Start loading
+            setIsLoading(true);
+
             chrome.runtime.sendMessage(
                 { type: "CAPTURE_SCREENSHOT" },
                 async (response: { screenshot?: string } | undefined) => {
                     if (!response?.screenshot) {
-                        setMessages(prev => [...prev, { role: "bot", text: "Error: This page is not allowing screenshots." }]);
+                        // Update the active chat with an error message
+                        setChats(prevChats =>
+                            prevChats.map(chat =>
+                                chat.id === activeChatIdRef.current
+                                    ? {
+                                        ...chat,
+                                        messages: [
+                                            ...chat.messages,
+                                            { role: "bot" as "bot", text: "Error: This page is not allowing screenshots." }
+                                        ]
+                                    }
+                                    : chat
+                            )
+                        );
+                        setIsLoading(false); // Stop loading
                         return;
                     }
                     const screenshot: string = response.screenshot;
 
-                    // Add user message
-                    setMessages(prev => [...prev, { role: "user", text: message }]);
+                    // If this is a new chat, assign a proper ID and name
+                    if (activeChatIdRef.current === "new-chat") {
+                        const newChatId = generateChatId(); // Generate a unique ID
+                        const newChatName = generateChatName(message); // Generate a name from the message
 
-                    // Add loader message
-                    const loaderId = Date.now();
-                    setMessages(prev => [...prev, {
-                        role: "bot",
-                        text: <div style={{ marginTop: "5px", marginBottom: "5px" }}>
-                            <BeatLoader
-                                color={"grey"}
-                                size={10}
-                                aria-label="Loading Spinner"
-                                data-testid="loader"
-                            />
-                        </div>,
-                        id: loaderId
-                    }]);
+                        // Create a new chat with the proper ID and name
+                        const newChat: ChatSession = {
+                            id: newChatId,
+                            label: newChatName,
+                            messages: [
+                                { role: "user" as "user", text: message }
+                            ],
+                        };
+
+                        // Replace the temporary chat with the new chat
+                        setChats(prevChats => [
+                            ...prevChats.filter(chat => chat.id !== "new-chat"), // Remove the temporary chat
+                            newChat, // Add the new chat
+                        ]);
+
+                        // Set the new chat as active
+                        setActiveChatId(newChatId);
+                        activeChatIdRef.current = newChatId; // Update the ref
+                    } else {
+                        // Add user message to the active chat
+                        setChats(prevChats =>
+                            prevChats.map(chat =>
+                                chat.id === activeChatIdRef.current
+                                    ? {
+                                        ...chat,
+                                        messages: [
+                                            ...chat.messages,
+                                            { role: "user", text: message }
+                                        ]
+                                    }
+                                    : chat
+                            )
+                        );
+                    }
 
                     try {
-                        const res: Response = await fetch("http://localhost:5678/webhook/chat", {
+                        const res: Response = await fetch("https://n8n.alsoknownas.me/webhook/chat", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ message, screenshot, history }),
                         });
+
+                        console.log("Response status:", res.status); // Log the status
+                        console.log("Response OK:", res.ok); // Log if the response is OK
 
                         if (!res.ok) {
                             if (res.status === 404) {
@@ -72,20 +172,50 @@ const ChatSection = () => {
                         }
 
                         const textData: string = await res.text();
+                        console.log("Bot response:", textData); // Log the bot's response
 
-                        // Remove loader before adding response
-                        setMessages(prev => prev.filter(msg => msg.id !== loaderId));
-                        setMessages(prev => [...prev, { role: "bot", text: textData }]);
+                        // Add bot response to the active chat
+                        setChats(prevChats => {
+                            const updatedChats = prevChats.map(chat =>
+                                chat.id === activeChatIdRef.current
+                                    ? {
+                                        ...chat,
+                                        messages: [
+                                            ...chat.messages,
+                                            { role: "bot" as "bot", text: textData }
+                                        ]
+                                    }
+                                    : chat
+                            );
+
+                            console.log("Updated chats:", updatedChats); // Log the updated chats
+                            return updatedChats;
+                        });
 
                     } catch (error: unknown) {
-                        // Remove loader before adding error message
-                        setMessages(prev => prev.filter(msg => msg.id !== loaderId));
-                        setMessages(prev => [...prev, { role: "bot", text: "Error: Unable to get response from server." }]);
+                        console.error("Error fetching bot response:", error); // Log any errors
+                        // Add error message to the active chat
+                        setChats(prevChats =>
+                            prevChats.map(chat =>
+                                chat.id === activeChatIdRef.current
+                                    ? {
+                                        ...chat,
+                                        messages: [
+                                            ...chat.messages,
+                                            { role: "bot" as "bot", text: "Error: Unable to get response from server." }
+                                        ]
+                                    }
+                                    : chat
+                            )
+                        );
+                    } finally {
+                        setIsLoading(false); // Stop loading
                     }
                 }
             );
         } catch (error: unknown) {
             console.error("Error capturing screenshot:", error);
+            setIsLoading(false); // Stop loading
         }
         setMessage("");
     };
@@ -96,12 +226,32 @@ const ChatSection = () => {
             sendMessage();
         }
     };
-
     return (
         <>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    background: "#b7f0f2",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.5)",
+                    borderRadius: "8px",
+                    fontWeight: "bold"
+                }}
+            >
+                <p style={{ marginLeft: "10px" }}>
+                    {activeChatId
+                        ? chats.find((chat) => chat.id === activeChatId)?.label
+                        : "No Active Chat"}
+                </p>
+                <MdOutlineOpenInNew
+                    style={{ fontSize: "20px", marginTop: "10px", marginRight: "10px", cursor: "pointer" }}
+                    onClick={startNewChat} // Start a new chat on click
+                    title="Start a new chat"
+                />
+            </div>
             <div style={{ height: "100%", display: "flex", flexDirection: "column", overflowY: "auto" }}>
-                {messages.length > 0 ? (
-                    messages.map((msg, index) => (
+                {activeChat?.messages?.length ?? 0 > 0 ? (
+                    activeChat?.messages.map((msg, index) => (
                         <div key={index} style={{
                             alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
                             backgroundColor: msg.role === "user" ? "#167477" : "#f1f1f1",
@@ -119,6 +269,17 @@ const ChatSection = () => {
                     <div style={{ textAlign: "center", marginTop: "20px" }}>
                         <img src={logo} alt="Copilot" style={{ maxWidth: "100px", marginBottom: "-15px" }} />
                         <p>n8n Copilot your Ai companion</p>
+                    </div>
+                )}
+
+                {isLoading && (
+                    <div style={{ marginTop: "5px", marginBottom: "5px" }}>
+                        <BeatLoader
+                            color={"grey"}
+                            size={10}
+                            aria-label="Loading Spinner"
+                            data-testid="loader"
+                        />
                     </div>
                 )}
                 <div ref={messagesEndRef} />
