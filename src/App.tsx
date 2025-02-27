@@ -41,11 +41,12 @@ interface ComponentProps {
   setActiveChatId: React.Dispatch<React.SetStateAction<string | null>>;
   [key: string]: any;
 }
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ComponentProps["activeTab"]>("Tab1");
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-
+  
   useEffect(() => {
     const savedChats = localStorage.getItem("chats");
     const savedActiveChatId = localStorage.getItem("activeChatId");

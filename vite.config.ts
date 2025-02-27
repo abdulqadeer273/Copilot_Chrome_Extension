@@ -11,7 +11,9 @@ export default defineConfig({
       input: {
         sidepanel: 'public/index.html', // Ensures side panel loads correctly
         background: 'src/background.ts', // Includes background script
-        main: 'src/main.tsx' // Ensures main.tsx is bundled
+        main: 'src/main.tsx', // Ensures main.tsx is bundled
+        content: 'src/content.ts',
+        injected: "src/injected.ts", 
       },
       output: {
         entryFileNames: '[name].js' // Ensures correct output filenames

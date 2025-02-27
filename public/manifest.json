@@ -6,7 +6,8 @@
     "permissions": [
         "sidePanel",
         "scripting",
-        "tabs"
+        "tabs",
+        "storage"
     ],
     "host_permissions": [
         "<all_urls>"
@@ -18,6 +19,27 @@
     "side_panel": {
         "default_path": "index.html"
     },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "injected.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
     "action": {
         "default_title": "Click to open panel"
     }
