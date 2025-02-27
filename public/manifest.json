@@ -17,5 +17,8 @@
     },
     "side_panel": {
         "default_path": "index.html"
+    },
+    "action": {
+        "default_title": "Click to open panel"
     }
 }

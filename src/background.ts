@@ -6,3 +6,7 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
     return true; // Indicates we will send an async response
   }
 });
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+});
