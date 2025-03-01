@@ -35,6 +35,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [chatSectionLoaded, setChatSectionLoaded] = useState(false);
     // const [events, setEvents] = useState<TrackingEvent[]>([]);
+    // const SCREENSHOT_DELAY = 4000;
     const activeChatIdRef = useRef<string | null>(activeChatId);
     const generateChatId = (): string => {
         return `chat-${Date.now()}`; // Use timestamp for uniqueness
@@ -54,14 +55,11 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
         //console.log(activeChatIdRef.current, 'activeChatIdRef.current');
         // Get the active chat
         const activeChat = chats.find(chat => chat.id === activeChatIdRef.current);
-        //console.log(activeChat, 'activeChat');
-        let history: { role: "user" | "bot"; text: string | JSX.Element }[] = [];
-        if (activeChat) {
-            // Prepare history from the active chat's messages
-            history = activeChat.messages.map(msg => ({ role: msg.role, text: msg.text }));
-        } else {
-            history = []
-        }
+        console.log(activeChat, 'activeChat');
+
+        const history: { role: "user" | "bot"; text: string | JSX.Element }[] =
+            activeChat?.messages.slice(-15).map(msg => ({ role: msg.role, text: msg.text })) || [];
+
 
 
         try {
@@ -176,12 +174,23 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
             setIsLoading(false); // Stop loading
         }
     }
+    const SCREENSHOT_DELAY = 2000; // 2 seconds delay
+
     useEffect(() => {
+        let canTakeScreenshot = true; // Flag to track if a screenshot can be taken
+
         const handleMessage = async (message: any) => {
-            //console.log("📩 Message received from content script:", message);
             if (message.source === "n8n-injected" && (message.type === "CLICK" || message.type === "URL_CHANGE")) {
-                await sendScreenShot();
-                // setEvents((prev) => [...prev, message]);
+                if (isLoading || !canTakeScreenshot) {
+                    return; // Ignore clicks while loading OR if a screenshot is already taken
+                }
+
+                canTakeScreenshot = false; // Prevent multiple screenshots
+
+                setTimeout(async () => {
+                    await sendScreenShot();
+                    canTakeScreenshot = true; // Allow new screenshots after this one is sent
+                }, SCREENSHOT_DELAY);
             }
         };
 
@@ -191,7 +200,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
         return () => {
             chrome.runtime.onMessage.removeListener(handleMessage);
         };
-    }, []);
+    }, [isLoading]); // Reacts to isLoading changes
     //console.log(events, 'events')
     const startNewChat = (): void => {
         const newChat: ChatSession = {
@@ -241,7 +250,8 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
         }
 
         // Prepare history from the active chat's messages
-        const history = activeChat.messages.map(msg => ({ role: msg.role, text: msg.text }));
+        const history: { role: "user" | "bot"; text: string | JSX.Element }[] =
+            activeChat?.messages.slice(-15).map(msg => ({ role: msg.role, text: msg.text })) || [];
 
         try {
             // Start loading
