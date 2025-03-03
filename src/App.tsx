@@ -2,6 +2,7 @@ import React, { useState, JSX, useEffect } from "react";;
 import { MdChatBubbleOutline, MdOutlineHistory, MdPersonOutline } from "react-icons/md";
 import { TfiHeadphoneAlt } from "react-icons/tfi";
 import { Component } from "./components/Base/Base";
+import EnableMonitoring from "./components/EnableMonitoring/EnableMonitoring";
 const tabs = [
   {
     id: "Tab1",
@@ -46,7 +47,8 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ComponentProps["activeTab"]>("Tab1");
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  
+  const [isToggled, setIsToggled] = useState(false);
+
   useEffect(() => {
     const savedChats = localStorage.getItem("chats");
     const savedActiveChatId = localStorage.getItem("activeChatId");
@@ -107,6 +109,10 @@ const App: React.FC = () => {
           </div>
         ))}
       </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid black", padding: "5px" }}>
+        <h4>Dom Monitoring</h4>
+        <EnableMonitoring isToggled={isToggled} setIsToggled={setIsToggled} />
+      </div>
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "10px", display: "flex", flexDirection: "column", gap: "10px", }}>
         <Component
@@ -116,6 +122,8 @@ const App: React.FC = () => {
           setActiveChatId={setActiveChatId}
           chats={chats}
           setChats={setChats}
+          isToggled={isToggled}
+          setIsToggled={setIsToggled}
         />
       </div>
 

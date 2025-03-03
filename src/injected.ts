@@ -22,10 +22,16 @@ if ((window as any).n8nInjectedScriptLoaded) {
 
         const target = event.target as HTMLElement;
 
-        // ✅ Allow normal link behavior
-        if (target.tagName === "A" || target.closest("a")) {
+        // ✅ Allow normal behavior for interactive elements
+        const interactiveElements = ["A", "BUTTON", "INPUT", "SELECT", "TEXTAREA", "LABEL"];
+        if (interactiveElements.includes(target.tagName) ||
+            target.closest("a") ||
+            target.closest("button") ||
+            target.closest("[role='button']") ||
+            target.hasAttribute("onclick")) {
             return;
         }
+
         event.preventDefault();
 
         window.postMessage({

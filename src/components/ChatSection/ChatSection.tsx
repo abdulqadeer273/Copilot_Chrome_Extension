@@ -23,13 +23,14 @@ interface ComponentProps {
     chats: ChatSession[];
     setChats: React.Dispatch<React.SetStateAction<ChatSession[]>>;
     setActiveChatId: React.Dispatch<React.SetStateAction<string | null>>;
+    isToggled: boolean;
     [key: string]: any;
 }
 // interface TrackingEvent {
 //     type: string;
 //     data: any;
 // }
-const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, setActiveChatId }) => {
+const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, setActiveChatId, isToggled }) => {
     const activeChat = chats.find(chat => chat.id === activeChatId);
     const [message, setMessage] = useState<string>("");
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -178,30 +179,35 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
     const SCREENSHOT_DELAY = 2000; // 2 seconds delay
 
     useEffect(() => {
-        let canTakeScreenshot = true; // Flag to track if a screenshot can be taken
+        let canTakeScreenshot = true; // Prevent multiple screenshots
 
         const handleMessage = async (message: any) => {
-            if (message.source === "n8n-injected" && (message.type === "CLICK" || message.type === "URL_CHANGE")) {
-                if (isLoading || !canTakeScreenshot) {
-                    return; // Ignore clicks while loading OR if a screenshot is already taken
+            if (
+                message.source === "n8n-injected" &&
+                (message.type === "CLICK" || message.type === "URL_CHANGE")
+            ) {
+                if (isLoading || !canTakeScreenshot || !isToggled) {
+                    return; // Ignore if loading, already taking a screenshot, or isToggled is false
                 }
 
-                canTakeScreenshot = false; // Prevent multiple screenshots
+                canTakeScreenshot = false; // Block additional screenshots temporarily
 
                 setTimeout(async () => {
                     await sendScreenShot();
-                    canTakeScreenshot = true; // Allow new screenshots after this one is sent
+                    canTakeScreenshot = true; // Re-enable screenshots
                 }, SCREENSHOT_DELAY);
             }
         };
 
-        // ✅ Listen for messages from background.js
+        // ✅ Add the listener when component mounts or isToggled changes
         chrome.runtime.onMessage.addListener(handleMessage);
 
+        // ✅ Clean up the listener when the component unmounts or isToggled changes
         return () => {
             chrome.runtime.onMessage.removeListener(handleMessage);
         };
-    }, [isLoading]); // Reacts to isLoading changes
+    }, [isLoading, isToggled]); // ✅ Re-run effect when isToggled changes
+    // Reacts to isLoading changes
     //console.log(events, 'events')
     const startNewChat = (): void => {
         const newChat: ChatSession = {
@@ -393,6 +399,21 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
             sendMessage();
         }
     };
+    // const markdownContainerStyle = {
+    //     width: '100%',
+    //     maxWidth: '600px',
+    //     border: '1px solid #ddd',
+    //     borderRadius: '5px',
+    //     padding: '10px',
+    //     overflow: 'hidden'
+    // };
+
+    const codeStyle = {
+        OverflowX: 'auto',
+        whiteSpace: 'pre-wrap',
+        WordWrap: 'break-word',
+        maxWidth: '100%'
+    };
     return (
         <>
             <div
@@ -444,9 +465,21 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                             paddingRight: "10px",
                             borderRadius: "10px",
                             maxWidth: "70%",
-                            marginBottom: "5px"
+                            marginBottom: "5px",
                         }}>
-                            {typeof msg.text === "string" ? <ReactMarkdown>{msg.text}</ReactMarkdown> : msg.text}
+                            {typeof msg.text === "string" ?
+                                <ReactMarkdown
+                                    components={{
+                                        code: ({ node, ...props }) => (
+                                            <code style={codeStyle} {...props} />
+                                        ),
+                                        pre: ({ node, ...props }) => (
+                                            <pre style={codeStyle} {...props} />
+                                        )
+                                    }}
+                                >
+                                    {msg.text}
+                                </ReactMarkdown> : msg.text}
                         </div>
                     ))
                 ) : (!isLoading &&
