@@ -5,6 +5,7 @@ import { MdOutlineKeyboardVoice } from "react-icons/md";
 import { LuSendHorizontal } from "react-icons/lu";
 import ReactMarkdown from 'react-markdown';
 import { BeatLoader } from "react-spinners";
+import Templates from "../Templates/Templates";
 
 type Message = {
     role: "user" | "bot";
@@ -449,9 +450,12 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                         </div>
                     ))
                 ) : (!isLoading &&
-                    <div style={{ textAlign: "center", marginTop: "20px" }}>
-                        <img src={logo} alt="Copilot" style={{ maxWidth: "100px", marginBottom: "-15px" }} />
-                        <p>n8n Copilot your Ai companion</p>
+                    <div>
+                        <div style={{ textAlign: "center", marginTop: "20px" }}>
+                            <img src={logo} alt="Copilot" style={{ maxWidth: "100px", marginBottom: "-15px" }} />
+                            <p>n8n Copilot your Ai companion</p>
+                        </div>
+                        <Templates />
                     </div>
                 )}
 
