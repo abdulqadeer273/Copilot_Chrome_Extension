@@ -482,7 +482,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                                 </ReactMarkdown> : msg.text}
                         </div>
                     ))
-                ) : (!isLoading &&
+                ) : (!isLoading && !activeChatIdRef.current) && (
                     <div>
                         <div style={{ textAlign: "center", marginTop: "20px" }}>
                             <img src={logo} alt="Copilot" style={{ maxWidth: "100px", marginBottom: "-15px" }} />
