@@ -110,7 +110,7 @@ const App: React.FC = () => {
         ))}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid black", padding: "5px" }}>
-        <h4>Dom Monitoring</h4>
+        <h4>Get Continuous Suggestions</h4>
         <EnableMonitoring isToggled={isToggled} setIsToggled={setIsToggled} />
       </div>
       {/* Body */}

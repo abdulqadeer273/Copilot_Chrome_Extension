@@ -117,7 +117,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                         const res: Response = await fetch("https://n8n.alsoknownas.me/webhook/chat", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ message: "My current view", screenshot, history }),
+                            body: JSON.stringify({ message: "This is Auto Sent Screenshot with DOM Monitoring", screenshot, history }),
                         });
 
                         //console.log("Response status:", res.status); // Log the status
@@ -176,7 +176,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
             setIsLoading(false); // Stop loading
         }
     }
-    const SCREENSHOT_DELAY = 2000; // 2 seconds delay
+    const SCREENSHOT_DELAY = 3000; // 2 seconds delay
 
     useEffect(() => {
         let canTakeScreenshot = true; // Prevent multiple screenshots
