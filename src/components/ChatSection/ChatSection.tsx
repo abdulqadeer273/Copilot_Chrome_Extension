@@ -408,11 +408,29 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
     //     overflow: 'hidden'
     // };
 
+    const textStyle = {
+        OverflowX: 'auto',
+        WhiteSpace: 'pre-wrap',
+        WordWrap: 'break-word',
+        maxWidth: '100%',
+        lineHeight: '1rem'
+    };
+
     const codeStyle = {
         OverflowX: 'auto',
         whiteSpace: 'pre-wrap',
-        WordWrap: 'break-word',
-        maxWidth: '100%'
+        wordWrap: 'break-word' as 'break-word',
+        maxWidth: '100%',
+        // backgroundColor: '#f5f5f5', // Optional: Better visibility for code blocks
+        padding: '4px',
+        borderRadius: '4px',
+        lineHeight: '1rem'
+    };
+    const listItemStyle = {
+        whiteSpace: 'pre-wrap',
+        WordWrap : 'break-word',
+        OverflowWrap : 'break-word',
+        maxWidth: '100%',
     };
     return (
         <>
@@ -475,6 +493,15 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                                         ),
                                         pre: ({ node, ...props }) => (
                                             <pre style={codeStyle} {...props} />
+                                        ),
+                                        p: ({ node, ...props }) => ( // ✅ Apply text wrapping to normal text
+                                            <p style={textStyle} {...props} />
+                                        ),
+                                        span: ({ node, ...props }) => ( // ✅ Ensure inline text doesn't overflow
+                                            <span style={textStyle} {...props} />
+                                        ),
+                                        li: ({ node, ...props }) => ( // ✅ Apply wrapping styles to <li>
+                                            <li style={listItemStyle} {...props} />
                                         )
                                     }}
                                 >
