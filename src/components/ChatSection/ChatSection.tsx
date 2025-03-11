@@ -60,7 +60,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
         console.log(activeChat, 'activeChat');
 
         const history: { role: "user" | "bot"; text: string | JSX.Element }[] =
-            activeChat?.messages.slice(-15).map(msg => ({ role: msg.role, text: msg.text })) || [];
+            activeChat?.messages.slice(-20).map(msg => ({ role: msg.role, text: msg.text })) || [];
 
 
 
