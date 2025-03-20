@@ -1,4 +1,4 @@
-import React, { useState, JSX, useEffect } from "react";;
+import React, { useState, useEffect } from "react";;
 import { MdChatBubbleOutline, MdOutlineHistory, MdPersonOutline } from "react-icons/md";
 import { TfiHeadphoneAlt } from "react-icons/tfi";
 import { Component } from "./components/Base/Base";
@@ -26,13 +26,16 @@ const tabs = [
   }
 ]
 type Message = {
+  id: string;
   role: "user" | "bot";
-  text: string | JSX.Element;
+  text: string;
+  options?: string[]; // Optional buttons
 };
 type ChatSession = {
   id: string;
   label: string;
   messages: Message[];
+  completed?: boolean; // Track if guided steps are finished
 };
 interface ComponentProps {
   activeTab: "Tab1" | "Tab2" | "Tab3" | "Tab4";
@@ -123,7 +126,7 @@ const App: React.FC = () => {
           chats={chats}
           setChats={setChats}
           isToggled={true}
-          // setIsToggled={setIsToggled}
+        // setIsToggled={setIsToggled}
         />
       </div>
 

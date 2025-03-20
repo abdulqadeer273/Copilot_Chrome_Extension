@@ -6,16 +6,75 @@ import { LuSendHorizontal } from "react-icons/lu";
 import ReactMarkdown from 'react-markdown';
 import { BeatLoader } from "react-spinners";
 import Templates from "../Templates/Templates";
+const automationSteps = [
+    {
+        id: "initial",
+        message: "What’s your starting point?",
+        options: [
+            { text: "I already have n8n hosted or in cloud", next: "existing-n8n" },
+            { text: "I don't have setup yet", next: "no-n8n" }
+        ]
+    },
+    {
+        id: "existing-n8n",
+        message: "Let’s start with building something smart.",
+        options: [
+            { text: "Pick from predefined workflows", next: "workflow-selection" },
+            { text: "Ask me questions", next: "ask-questions" }
+        ]
+    },
+    {
+        id: "no-n8n",
+        message: "Let's build something together quickly and for free (your first automation is on us).",
+        next: "workflow-selection"
+    },
+    {
+        id: "workflow-selection",
+        message: "What is your most urgent need?",
+        options: [
+            { text: "More leads", next: "build-automation" },
+            { text: "More traffic", next: "build-automation" },
+            { text: "Less costs", next: "build-automation" },
+            { text: "Better sales alignment", next: "build-automation" }
+        ]
+    },
+    {
+        id: "build-automation",
+        message: "Let's configure your automation.",
+        steps: [
+            "CRM: <HubSpot> <Pipedrive> <Other> <I don’t have one>",
+            "Data Provider: 'Shall we use Dataprovider X for Z? (Cost: Y)'",
+            "Data Management: 'Use Airtable or set up NoCodeDB (recommended)?'",
+            "✅ Step 1: Setup API trigger (Guide to get API keys)",
+            "✅ Step 2: Configure the prompt (Use predefined structure)",
+            "✅ Step 3: Test the workflow",
+            "✅ Step 4: Finalize & launch"
+        ],
+        options: [
+            { text: "Finish Setup", next: "chat-mode" }
+        ]
+    },
+    {
+        id: "chat-mode",
+        message: "Your automation is live! Need help with something else?",
+        options: [
+            { text: "Start a new automation", next: "initial" },
+            { text: "Ask a question", next: "ask-question" }
+        ]
+    }
+];
 
 type Message = {
+    id: string;
     role: "user" | "bot";
-    text: string | JSX.Element;
-    id?: number; // Optional ID for tracking messages 
+    text: string;
+    options?: string[]; // Optional buttons
 };
 type ChatSession = {
     id: string;
     label: string;
     messages: Message[];
+    completed?: boolean; // Track if guided steps are finished
 };
 interface ComponentProps {
     activeTab: "Tab1" | "Tab2" | "Tab3" | "Tab4";
@@ -35,7 +94,21 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
     const [message, setMessage] = useState<string>("");
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [chatSectionLoaded, setChatSectionLoaded] = useState(false);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+    const [hasScroll, setHasScroll] = useState(false);
+    useEffect(() => {
+        const checkScroll = () => {
+            if (chatContainerRef.current) {
+                setHasScroll(chatContainerRef.current.scrollHeight > chatContainerRef.current.clientHeight);
+            }
+        };
+
+        checkScroll(); // Check on mount
+        window.addEventListener("resize", checkScroll); // Check when window resizes
+
+        return () => window.removeEventListener("resize", checkScroll);
+    }, [activeChat?.messages]);
+    // const [chatSectionLoaded, setChatSectionLoaded] = useState(false);
     // const [events, setEvents] = useState<TrackingEvent[]>([]);
     // const SCREENSHOT_DELAY = 4000;
     const activeChatIdRef = useRef<string | null>(activeChatId);
@@ -77,13 +150,16 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                                     ? {
                                         ...chat,
                                         messages: [
-                                            ...chat.messages,
-                                            { role: "bot" as "bot", text: "Error: This page is not allowing screenshots." }
+                                            ...(chat.messages ?? []), // Ensure messages exist
+                                            { id: `msg-${Date.now()}`, role: "bot", text: "Error: This page is not allowing screenshots." }
                                         ]
                                     }
                                     : chat
                             )
                         );
+
+
+
                         setIsLoading(false); // Stop loading
                         return;
                     }
@@ -93,24 +169,24 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                     // If this is a new chat, assign a proper ID and name
                     if (activeChatIdRef.current === "new-chat") {
                         const newChatId = generateChatId(); // Generate a unique ID
-                        const newChatName = generateChatName(`event-${Date.now()}`); // Generate a name from the message
+                        const newChatName = generateChatName(`event-${Date.now()}`); // Generate a unique name
 
-                        // Create a new chat with the proper ID and name
-                        const newChat: ChatSession = {
-                            id: newChatId,
-                            label: newChatName,
-                            messages: [],
-                        };
+                        setChats(prevChats =>
+                            prevChats.map(chat =>
+                                chat.id === "new-chat"
+                                    ? {
+                                        ...chat,
+                                        id: newChatId,
+                                        label: newChatName,
+                                        completed: true // Ensure completed is always true
+                                    }
+                                    : chat
+                            )
+                        );
 
-                        // Replace the temporary chat with the new chat
-                        setChats(prevChats => [
-                            ...prevChats.filter(chat => chat.id !== "new-chat"), // Remove the temporary chat
-                            newChat, // Add the new chat
-                        ]);
-
-                        // Set the new chat as active
+                        // Update active chat references
                         setActiveChatId(newChatId);
-                        activeChatIdRef.current = newChatId; // Update the ref
+                        activeChatIdRef.current = newChatId;
                     }
 
                     try {
@@ -134,22 +210,19 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                         //console.log("Bot response:", textData); // Log the bot's response
 
                         // Add bot response to the active chat
-                        setChats(prevChats => {
-                            const updatedChats = prevChats.map(chat =>
+                        setChats(prevChats =>
+                            prevChats.map(chat =>
                                 chat.id === activeChatIdRef.current
                                     ? {
                                         ...chat,
                                         messages: [
-                                            ...chat.messages,
-                                            { role: "bot" as "bot", text: textData }
+                                            ...(chat.messages ?? []), // Ensure messages array exists
+                                            { id: `msg-${Date.now()}`, role: "bot", text: textData } // Add a unique ID
                                         ]
                                     }
                                     : chat
-                            );
-
-                            //console.log("Updated chats:", updatedChats); // Log the updated chats
-                            return updatedChats;
-                        });
+                            )
+                        );
 
                     } catch (error: unknown) {
                         console.error("Error fetching bot response:", error); // Log any errors
@@ -159,13 +232,14 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                                     ? {
                                         ...chat,
                                         messages: [
-                                            ...chat.messages,
-                                            { role: "bot" as "bot", text: "Error: Unable to get response from server." }
+                                            ...(chat.messages ?? []), // Ensure messages array exists
+                                            { id: `msg-${Date.now()}`, role: "bot", text: "Error: Unable to get response from server." }
                                         ]
                                     }
                                     : chat
                             )
                         );
+
                     } finally {
                         setIsLoading(false); // Stop loading
                     }
@@ -211,26 +285,75 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
     //console.log(events, 'events')
     const startNewChat = (): void => {
         const newChat: ChatSession = {
-            id: "new-chat", // Temporary ID
-            label: "New Chat", // Temporary label
-            messages: [],
+            id: "new-chat", // Generate a unique chat ID
+            label: "new-chat",
+            messages: [
+                {
+                    id: "msg-1",
+                    role: "bot",
+                    text: "What’s your starting point?",
+                    options: ["I already have n8n hosted or in cloud", "I don't have setup yet"],
+                }
+            ],
+            completed: false, // This means the user still needs to complete the guided steps
         };
 
-        // Add the new chat to the chats state
         setChats(prevChats => [...prevChats, newChat]);
-
-        // Set the new chat as active
-        setActiveChatId("new-chat");
+        setActiveChatId(newChat.id);
     };
+    const handleUserSelection = (chatId: string, selectedOption: string) => {
+        if (!activeChat?.completed) {
+            setChats(prevChats =>
+                prevChats.map(chat => {
+                    if (chat.id !== chatId) return chat;
+
+                    const updatedMessages = [...chat.messages];
+
+                    // Add user selection as a message
+                    updatedMessages.push({
+                        id: `msg-${Date.now()}`,
+                        role: "user",
+                        text: selectedOption,
+                    });
+
+                    // Find the current step in automationSteps
+                    const currentStep = automationSteps.find(step =>
+                        step.options?.some(opt => opt.text === selectedOption)
+                    );
+
+                    // Get the `next` step from the selected option
+                    const nextStepId = currentStep?.options?.find(opt => opt.text === selectedOption)?.next;
+                    const nextStep = automationSteps.find(step => step.id === nextStepId);
+
+                    if (nextStep) {
+                        updatedMessages.push({
+                            id: `msg-${Date.now()}`,
+                            role: "bot",
+                            text: nextStep.message,
+                            options: nextStep.options?.map(opt => opt.text), // Show the next options
+                        });
+                    } else {
+                        chat.completed = true; // Mark chat as completed if no next step
+                    }
+
+                    return { ...chat, messages: updatedMessages };
+                })
+            );
+        }
+    };
+
+
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [activeChat?.messages]);
-    useEffect(() => {
-        if (!chatSectionLoaded && !activeChatId) {
-            startNewChat();
-            setChatSectionLoaded(true)
-        }
-    }, [])
+
+    // useEffect(() => {
+    //     if (!chatSectionLoaded && !activeChatId) {
+    //         startNewChat();
+    //         setChatSectionLoaded(true)
+    //     }
+    // }, [])
 
 
     // Keep the ref in sync with the state
@@ -275,8 +398,8 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                                     ? {
                                         ...chat,
                                         messages: [
-                                            ...chat.messages,
-                                            { role: "bot" as "bot", text: "Error: This page is not allowing screenshots." }
+                                            ...(chat.messages ?? []), // Ensure messages exist
+                                            { id: `msg-${Date.now()}`, role: "bot", text: "Error: This page is not allowing screenshots." }
                                         ]
                                     }
                                     : chat
@@ -286,30 +409,27 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                         return;
                     }
                     const screenshot: string = response.screenshot;
-
                     // If this is a new chat, assign a proper ID and name
                     if (activeChatIdRef.current === "new-chat") {
                         const newChatId = generateChatId(); // Generate a unique ID
-                        const newChatName = generateChatName(message); // Generate a name from the message
+                        const newChatName = generateChatName(`event-${Date.now()}`); // Generate a unique name
 
-                        // Create a new chat with the proper ID and name
-                        const newChat: ChatSession = {
-                            id: newChatId,
-                            label: newChatName,
-                            messages: [
-                                { role: "user" as "user", text: message }
-                            ],
-                        };
+                        setChats(prevChats =>
+                            prevChats.map(chat =>
+                                chat.id === "new-chat"
+                                    ? {
+                                        ...chat,
+                                        id: newChatId,
+                                        label: newChatName,
+                                        completed: true // Ensure completed is always true
+                                    }
+                                    : chat
+                            )
+                        );
 
-                        // Replace the temporary chat with the new chat
-                        setChats(prevChats => [
-                            ...prevChats.filter(chat => chat.id !== "new-chat"), // Remove the temporary chat
-                            newChat, // Add the new chat
-                        ]);
-
-                        // Set the new chat as active
+                        // Update active chat references
                         setActiveChatId(newChatId);
-                        activeChatIdRef.current = newChatId; // Update the ref
+                        activeChatIdRef.current = newChatId;
                     } else {
                         // Add user message to the active chat
                         setChats(prevChats =>
@@ -318,13 +438,14 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                                     ? {
                                         ...chat,
                                         messages: [
-                                            ...chat.messages,
-                                            { role: "user", text: message }
+                                            ...(chat.messages ?? []), // Ensure messages array exists
+                                            { id: `msg-${Date.now()}`, role: "user", text: message } // Add a unique ID
                                         ]
                                     }
                                     : chat
                             )
                         );
+
                     }
 
                     try {
@@ -348,23 +469,19 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                         //console.log("Bot response:", textData); // Log the bot's response
 
                         // Add bot response to the active chat
-                        setChats(prevChats => {
-                            const updatedChats = prevChats.map(chat =>
+                        setChats(prevChats =>
+                            prevChats.map(chat =>
                                 chat.id === activeChatIdRef.current
                                     ? {
                                         ...chat,
                                         messages: [
-                                            ...chat.messages,
-                                            { role: "bot" as "bot", text: textData }
+                                            ...(chat.messages ?? []), // Ensure messages exist
+                                            { id: `msg-${Date.now()}`, role: "bot" as "bot", text: textData } // Explicitly define role as "bot"
                                         ]
                                     }
                                     : chat
-                            );
-
-                            //console.log("Updated chats:", updatedChats); // Log the updated chats
-                            return updatedChats;
-                        });
-
+                            )
+                        );
                     } catch (error: unknown) {
                         console.error("Error fetching bot response:", error); // Log any errors
                         // Add error message to the active chat
@@ -374,13 +491,12 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                                     ? {
                                         ...chat,
                                         messages: [
-                                            ...chat.messages,
-                                            { role: "bot" as "bot", text: "Error: Unable to get response from server." }
+                                            ...(chat.messages ?? []), // Ensure messages exist
+                                            { id: `msg-${Date.now()}`, role: "bot", text: "Error: Unable to get response from server." } // Add a unique ID
                                         ]
-                                    }
-                                    : chat
+                                    } : chat
                             )
-                        );
+                        )
                     } finally {
                         setIsLoading(false); // Stop loading
                     }
@@ -473,19 +589,18 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                     New Chat
                 </button>
             </div>
-            <div style={{ height: "100%", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+            <div ref={chatContainerRef} style={{ height: "100%", display: "flex", flexDirection: "column", overflowY: "auto" }}>
                 {activeChat?.messages?.length ?? 0 > 0 ? (
-                    activeChat?.messages.map((msg, index) => (
-                        <div key={index} style={{
+                    activeChat?.messages.map((msg) => (
+                        <div key={msg.id} style={{
                             alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
                             backgroundColor: msg.role === "user" ? "black" : "#303030",
-                            color: msg.role === "user" ? "white" : "white",
-                            paddingLeft: "10px",
-                            paddingRight: "10px",
+                            color: "white",
+                            padding: "10px",
                             borderRadius: "10px",
                             maxWidth: "70%",
                             marginBottom: "5px",
-                            marginRight: msg.role === "user" ? "5px" : "0",
+                            marginRight: hasScroll ? (msg.role === "user" ? "10px" : "0") : "0"
                         }}>
                             {typeof msg.text === "string" ?
                                 <ReactMarkdown
@@ -506,9 +621,36 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                                             <li style={listItemStyle} {...props} />
                                         )
                                     }}
-                                >
-                                    {msg.text}
-                                </ReactMarkdown> : msg.text}
+                                >{msg.text}</ReactMarkdown> : msg.text
+                            }
+
+                            {/* Render options inside chat bubble */}
+                            {msg.options && msg.role === "bot" && (
+                                <div style={{ marginTop: "10px" }}>
+                                    {msg.options.map((option) => (
+                                        <button
+                                            key={option}
+                                            onClick={() => handleUserSelection(activeChat.id, option)}
+                                            disabled={activeChat.completed}
+                                            style={{
+                                                background: activeChat.completed ? "#ddd" : "white", // Gray out if disabled
+                                                color: activeChat.completed ? "#888" : "black", // Dim text color if disabled
+                                                padding: "8px",
+                                                borderRadius: "5px",
+                                                marginTop: "5px",
+                                                border: "none",
+                                                cursor: activeChat.completed ? "not-allowed" : "pointer", // Show "not-allowed" cursor when disabled
+                                                display: "block", // Each button takes a new line
+                                                width: "100%", // Optional: Makes buttons full-width
+                                                opacity: activeChat.completed ? 0.6 : 1, // Reduce opacity when disabled
+                                            }}
+                                        >
+                                            {option}
+                                        </button>
+
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ))
                 ) : (!isLoading && !activeChatIdRef.current) && (
