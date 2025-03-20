@@ -428,8 +428,8 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
     };
     const listItemStyle = {
         whiteSpace: 'pre-wrap',
-        WordWrap : 'break-word',
-        OverflowWrap : 'break-word',
+        WordWrap: 'break-word',
+        OverflowWrap: 'break-word',
         maxWidth: '100%',
     };
     return (
@@ -438,11 +438,12 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                 style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    background: "#b7f0f2",
+                    background: "#303030",
                     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.5)",
                     borderRadius: "8px",
                     fontWeight: "bold",
-                    minHeight: "40px"
+                    minHeight: "40px",
+                    color: "white"
                 }}
             >
                 <p style={{ marginLeft: "10px" }}>
@@ -453,7 +454,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                 <button
                     onClick={startNewChat} // Trigger the new chat function
                     style={{
-                        backgroundColor: "#167477",
+                        backgroundColor: "black",
                         color: "white",
                         border: "none",
                         borderRadius: "8px",
@@ -465,8 +466,8 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                         margin: "5px 5px",
                         transition: "background-color 0.2s ease",
                     }}
-                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#125a5d")}
-                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#167477")}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#212121")}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "black")}
                     title="Start a new chat"
                 >
                     New Chat
@@ -477,13 +478,14 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                     activeChat?.messages.map((msg, index) => (
                         <div key={index} style={{
                             alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                            backgroundColor: msg.role === "user" ? "#167477" : "#f1f1f1",
-                            color: msg.role === "user" ? "white" : "black",
+                            backgroundColor: msg.role === "user" ? "black" : "#303030",
+                            color: msg.role === "user" ? "white" : "white",
                             paddingLeft: "10px",
                             paddingRight: "10px",
                             borderRadius: "10px",
                             maxWidth: "70%",
                             marginBottom: "5px",
+                            marginRight: msg.role === "user" ? "5px" : "0",
                         }}>
                             {typeof msg.text === "string" ?
                                 <ReactMarkdown
@@ -511,7 +513,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                     ))
                 ) : (!isLoading && !activeChatIdRef.current) && (
                     <div>
-                        <div style={{ textAlign: "center", marginTop: "20px" }}>
+                        <div style={{ textAlign: "center", marginTop: "20px", color: "white" }}>
                             <img src={logo} alt="Copilot" style={{ maxWidth: "100px", marginBottom: "-15px" }} />
                             <p>n8n Copilot your Ai companion</p>
                         </div>
@@ -536,8 +538,9 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                 display: "flex",
                 flexDirection: "column",
                 padding: "10px",
-                border: "2px solid black",
-                backgroundColor: "#b7f0f2"
+                border: "2px solid #303030",
+                backgroundColor: "#303030",
+                borderRadius: "1.5rem",
             }}>
                 <textarea
                     value={message}
@@ -546,12 +549,13 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                     placeholder="Ask anything"
                     style={{
                         width: "100%",
-                        backgroundColor: "#b7f0f2",
                         resize: "none",
                         height: "40px",
                         overflowY: "auto",
                         outline: "none",
-                        border: "none"
+                        border: "none",
+                        background: "none",
+                        color: "white",
                     }}
                 />
                 <div style={{
@@ -560,14 +564,14 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                     marginTop: "10px"
                 }}>
                     <div>
-                        <button style={{ background: "none", border: "none", cursor: "pointer", marginRight: "2px" }}>
+                        <button style={{ background: "none", border: "none", cursor: "pointer", marginRight: "2px", color: "white" }}>
                             <IoImageOutline style={{ width: "24px", height: "24px" }} />
                         </button>
-                        <button style={{ background: "none", border: "none", cursor: "pointer" }}>
+                        <button style={{ background: "none", border: "none", cursor: "pointer", color: "white" }}>
                             <MdOutlineKeyboardVoice style={{ width: "24px", height: "24px" }} />
                         </button>
                     </div>
-                    <button onClick={sendMessage} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                    <button onClick={sendMessage} style={{ background: "none", border: "none", cursor: "pointer", color: "white" }}>
                         <LuSendHorizontal style={{ width: "24px", height: "24px" }} />
                     </button>
                 </div>

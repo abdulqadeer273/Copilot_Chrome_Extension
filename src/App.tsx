@@ -2,27 +2,27 @@ import React, { useState, JSX, useEffect } from "react";;
 import { MdChatBubbleOutline, MdOutlineHistory, MdPersonOutline } from "react-icons/md";
 import { TfiHeadphoneAlt } from "react-icons/tfi";
 import { Component } from "./components/Base/Base";
-import EnableMonitoring from "./components/EnableMonitoring/EnableMonitoring";
+// import EnableMonitoring from "./components/EnableMonitoring/EnableMonitoring";
 const tabs = [
   {
     id: "Tab1",
     name: "chat",
-    icon: <MdChatBubbleOutline fontSize={30} />,
+    icon: <MdChatBubbleOutline fontSize={30} color="white"/>,
   },
   {
     id: "Tab2",
     name: "history",
-    icon: <MdOutlineHistory fontSize={30} />,
+    icon: <MdOutlineHistory fontSize={30} color="white" />,
   },
   , {
     id: "Tab3",
     name: "support",
-    icon: <TfiHeadphoneAlt fontSize={25} />,
+    icon: <TfiHeadphoneAlt fontSize={25} color="white" />,
   },
   {
     id: "Tab4",
     name: "profile",
-    icon: <MdPersonOutline fontSize={30} />,
+    icon: <MdPersonOutline fontSize={30} color="white" />,
   }
 ]
 type Message = {
@@ -47,7 +47,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ComponentProps["activeTab"]>("Tab1");
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [isToggled, setIsToggled] = useState(false);
+  // const [isToggled, setIsToggled] = useState(false);
 
   useEffect(() => {
     const savedChats = localStorage.getItem("chats");
@@ -80,12 +80,12 @@ const App: React.FC = () => {
     <div style={{
       display: "flex",
       flexDirection: "column",
-      height: "97vh",
-      width: "100%",
+      height: "99vh",
+      width: "99%",
       overflowY: "hidden",
       borderRadius: "1rem",
       border: "2px solid",
-      background: "turquoise"
+      background: "#212121"
     }}>
       {/* Copilot Header */}
       <div style={{ display: "flex", borderTopLeftRadius: "14px", borderTopRightRadius: "14px" }}>
@@ -100,7 +100,7 @@ const App: React.FC = () => {
             borderTop: "none",
             borderLeft: elem?.name === "chat" ? "none" : "2px solid black",
             minHeight: 60,
-            background: activeTab === elem?.id ? "turquoise" : "white",
+            background: activeTab === elem?.id ? "#212121" : "#303030",
             cursor: "pointer"
           }}
             onClick={() => setActiveTab((elem?.id as ComponentProps["activeTab"]) || "Tab1")}
@@ -109,10 +109,10 @@ const App: React.FC = () => {
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid black", padding: "5px" }}>
+      {/* <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid black", padding: "5px" }}>
         <h4>Get Continuous Suggestions</h4>
         <EnableMonitoring isToggled={isToggled} setIsToggled={setIsToggled} />
-      </div>
+      </div> */}
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "10px", display: "flex", flexDirection: "column", gap: "10px", }}>
         <Component
@@ -122,8 +122,8 @@ const App: React.FC = () => {
           setActiveChatId={setActiveChatId}
           chats={chats}
           setChats={setChats}
-          isToggled={isToggled}
-          setIsToggled={setIsToggled}
+          isToggled={true}
+          // setIsToggled={setIsToggled}
         />
       </div>
 

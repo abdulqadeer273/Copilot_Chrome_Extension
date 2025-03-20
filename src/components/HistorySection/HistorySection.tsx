@@ -43,7 +43,7 @@ const HistorySection: React.FC<ComponentProps> = ({
 
     return (
         <div style={{ padding: "10px", fontWeight: "700", height: "100%" }}>
-            <h3 style={{ marginBottom: "16px", color: "#167477" }}>Chat History</h3>
+            <h3 style={{ marginBottom: "16px", color: "white" }}>Chat History</h3>
             <ul style={{ listStyle: "none", padding: 0 }}>
                 {chats.map((chat) => (
                     <li
@@ -55,7 +55,7 @@ const HistorySection: React.FC<ComponentProps> = ({
                             padding: "8px 12px",
                             marginBottom: "5px",
                             borderRadius: "8px",
-                            backgroundColor: chat.id === activeChatId ? "#e0f7fa" : "#f5f5f5",
+                            backgroundColor: chat.id === activeChatId ? "black" : "#f5f5f5",
                             cursor: "pointer",
                             transition: "background-color 0.2s ease",
                         }}
@@ -64,7 +64,7 @@ const HistorySection: React.FC<ComponentProps> = ({
                         <span
                             style={{
                                 fontWeight: chat.id === activeChatId ? "bold" : "normal",
-                                color: chat.id === activeChatId ? "#167477" : "#333",
+                                color: chat.id === activeChatId ? "white" : "#333",
                             }}
                         >
                             {chat.label || `Chat ${chat.id}`}
@@ -83,7 +83,7 @@ const HistorySection: React.FC<ComponentProps> = ({
                                 alignItems: "center",
                             }}
                         >
-                            <FaTrash color="#1e7387" />
+                            <FaTrash color="#EC625F" />
                         </button>
                     </li>
                 ))}
