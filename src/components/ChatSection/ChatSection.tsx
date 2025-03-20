@@ -142,30 +142,6 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
             chrome.runtime.sendMessage(
                 { type: "CAPTURE_SCREENSHOT" },
                 async (response: { screenshot?: string } | undefined) => {
-                    if (!response?.screenshot) {
-                        // Update the active chat with an error message
-                        setChats(prevChats =>
-                            prevChats.map(chat =>
-                                chat.id === activeChatIdRef.current
-                                    ? {
-                                        ...chat,
-                                        messages: [
-                                            ...(chat.messages ?? []), // Ensure messages exist
-                                            { id: `msg-${Date.now()}`, role: "bot", text: "Error: This page is not allowing screenshots." }
-                                        ]
-                                    }
-                                    : chat
-                            )
-                        );
-
-
-
-                        setIsLoading(false); // Stop loading
-                        return;
-                    }
-                    const screenshot: string = response.screenshot;
-
-
                     // If this is a new chat, assign a proper ID and name
                     if (activeChatIdRef.current === "new-chat") {
                         const newChatId = generateChatId(); // Generate a unique ID
@@ -193,7 +169,11 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                         const res: Response = await fetch("https://n8n.alsoknownas.me/webhook/chat", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ message: "This is Auto Sent Screenshot with DOM Monitoring", screenshot, history }),
+                            body: JSON.stringify({
+                                message: "This is Auto Sent Screenshot with DOM Monitoring",
+                                screenshot: response?.screenshot || null,
+                                history
+                            }),
                         });
 
                         //console.log("Response status:", res.status); // Log the status
@@ -390,25 +370,6 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
             chrome.runtime.sendMessage(
                 { type: "CAPTURE_SCREENSHOT" },
                 async (response: { screenshot?: string } | undefined) => {
-                    if (!response?.screenshot) {
-                        // Update the active chat with an error message
-                        setChats(prevChats =>
-                            prevChats.map(chat =>
-                                chat.id === activeChatIdRef.current
-                                    ? {
-                                        ...chat,
-                                        messages: [
-                                            ...(chat.messages ?? []), // Ensure messages exist
-                                            { id: `msg-${Date.now()}`, role: "bot", text: "Error: This page is not allowing screenshots." }
-                                        ]
-                                    }
-                                    : chat
-                            )
-                        );
-                        setIsLoading(false); // Stop loading
-                        return;
-                    }
-                    const screenshot: string = response.screenshot;
                     // If this is a new chat, assign a proper ID and name
                     if (activeChatIdRef.current === "new-chat") {
                         const newChatId = generateChatId(); // Generate a unique ID
@@ -452,7 +413,11 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                         const res: Response = await fetch("https://n8n.alsoknownas.me/webhook/chat", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ message, screenshot, history }),
+                            body: JSON.stringify({
+                                message,
+                                screenshot: response?.screenshot || null,
+                                history
+                            }),
                         });
 
                         //console.log("Response status:", res.status); // Log the status
