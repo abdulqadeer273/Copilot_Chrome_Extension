@@ -113,7 +113,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -130,7 +130,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -147,7 +147,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -164,7 +164,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
 
@@ -183,7 +183,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -200,7 +200,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -217,7 +217,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -234,7 +234,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
 
@@ -253,7 +253,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -270,7 +270,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -287,7 +287,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -304,7 +304,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -321,7 +321,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
 
@@ -340,7 +340,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -357,7 +357,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -374,7 +374,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
     {
@@ -391,7 +391,7 @@ const automationSteps = [
         ],
         options: [
             { text: "Complete Setup", next: "chat-mode" },
-            { text: "Chat with Agent", next: "ask-questions" }
+            { text: "I Need Help", next: "ask-questions" }
         ]
     },
 
@@ -406,7 +406,7 @@ const automationSteps = [
     },
     {
         id: "ask-questions",
-        message: "I'm here to help with any n8n questions or challenges. What would you like to know?",
+        message: "I'm here to help with any n8n setup, n8n questions and challenges. What would you like to know?",
         // This is the endpoint for free-form conversation with the agent
         chatMode: true
     }
@@ -620,7 +620,7 @@ const ChatSection: React.FC<ComponentProps> = ({ chats, activeChatId, setChats, 
                 {
                     id: "msg-1",
                     role: "bot",
-                    text: "What’s your starting point?",
+                    text: "Welcome to the n8n Copilot! What's your current n8n status?",
                     options: [
                         { text: "I already have n8n hosted", next: "existing-n8n" },
                         { text: "I need to set up n8n", next: "no-n8n" },
